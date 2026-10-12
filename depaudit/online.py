@@ -13,7 +13,7 @@ TIMEOUT = 10
 
 def _get_json(url: str) -> dict | None:
   try:
-    req = urllib.request.Request(url, headers={"User-Agent": "depcheck/0.1"})
+    req = urllib.request.Request(url, headers={"User-Agent": "depaudit/0.1"})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
       return json.loads(resp.read().decode("utf-8"))
   except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError,

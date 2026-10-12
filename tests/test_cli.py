@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from depcheck.cli import main
+from depaudit.cli import main
 
 
 def test_clean_project_exit_zero(tmp_path: Path, capsys):
@@ -37,7 +37,7 @@ def test_online_flag_registered(tmp_path: Path, capsys, monkeypatch):
   (tmp_path / "app.py").write_text("import requests\n")
 
   # Stub the network call
-  import depcheck.cli as cli
+  import depaudit.cli as cli
   monkeypatch.setattr(cli, "latest_pypi", lambda name: "3.0.0")
 
   rc = cli.main([str(tmp_path), "--online", "--json"])

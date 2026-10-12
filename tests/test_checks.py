@@ -1,9 +1,9 @@
-from depcheck.checks.duplicate import DuplicateCheck
-from depcheck.checks.missing import MissingCheck
-from depcheck.checks.stdlib_shadow import StdlibShadowCheck
-from depcheck.checks.unpinned import UnpinnedCheck
-from depcheck.checks.unused import UnusedCheck
-from depcheck.models import Dependency, Import, Project
+from depaudit.checks.duplicate import DuplicateCheck
+from depaudit.checks.missing import MissingCheck
+from depaudit.checks.stdlib_shadow import StdlibShadowCheck
+from depaudit.checks.unpinned import UnpinnedCheck
+from depaudit.checks.unused import UnusedCheck
+from depaudit.models import Dependency, Import, Project
 
 
 def make_project(deps=(), imports=(), languages=("python",)):

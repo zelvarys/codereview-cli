@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from depcheck.parsers.package_json import PackageJsonParser
+from depaudit.parsers.package_json import PackageJsonParser
 
 
 def test_deps_and_devdeps(tmp_path: Path):

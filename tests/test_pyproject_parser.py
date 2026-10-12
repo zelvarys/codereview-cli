@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from depcheck.parsers.pyproject import PyprojectParser
+from depaudit.parsers.pyproject import PyprojectParser
 
 
 def test_pep621_dependencies(tmp_path: Path):

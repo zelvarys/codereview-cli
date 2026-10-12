@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from depcheck.parsers.requirements import RequirementsParser
+from depaudit.parsers.requirements import RequirementsParser
 
 
 def write(tmp: Path, name: str, content: str) -> Path:

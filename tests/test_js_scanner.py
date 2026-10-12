@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from depcheck.scanners.js_imports import JsImportsScanner
+from depaudit.scanners.js_imports import JsImportsScanner
 
 
 def modules(tmp_path: Path) -> set[str]:

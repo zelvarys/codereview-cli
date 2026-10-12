@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from depcheck.scanners.py_imports import PyImportsScanner
+from depaudit.scanners.py_imports import PyImportsScanner
 
 
 def modules(tmp_path: Path) -> set[str]:

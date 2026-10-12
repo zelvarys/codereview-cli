@@ -1,5 +1,5 @@
-from depcheck.checks.outdated import OutdatedCheck, _extract_pinned, _major
-from depcheck.models import Dependency, Project
+from depaudit.checks.outdated import OutdatedCheck, _extract_pinned, _major
+from depaudit.models import Dependency, Project
 
 
 def dep(name, constraint, line=1):

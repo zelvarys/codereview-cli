@@ -3,23 +3,28 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "depcheck"
+name = "depaudit"
 version = "0.1.0"
 description = "Audit project dependencies for common problems"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Zelvarys" }]
+authors = [{ name = "Zelvarys", email = "me.zelvarys@gmail.com" }]  
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/zelvarys/depaudit-cli"         
+Repository = "https://github.com/zelvarys/depaudit-cli"       
+Issues = "https://github.com/zelvarys/depaudit-cli/issues"    
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 
 [project.scripts]
-depcheck = "depcheck.cli:main"
+depaudit = "depaudit.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["depcheck*"]
+include = ["depaudit*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

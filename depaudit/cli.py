@@ -1,4 +1,4 @@
-"""depcheck CLI entry point."""
+"""depaudit CLI entry point."""
 
 from __future__ import annotations
 
@@ -116,9 +116,9 @@ def run(path: str, as_json: bool, online: bool) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-  p = argparse.ArgumentParser(prog="depcheck", description="Audit dependencies.")
+  p = argparse.ArgumentParser(prog="depaudit", description="Audit dependencies.")
   p.add_argument("-v", "--version", action="version",
-           version=f"depcheck {__version__}")
+           version=f"depaudit {__version__}")
   p.add_argument("path", nargs="?", default=".", help="Project directory")
   p.add_argument("--json", action="store_true", help="JSON output")
   p.add_argument("--online", action="store_true",
