@@ -32,6 +32,19 @@ def test_json_output_has_line(tmp_path: Path, capsys):
     assert missing["line"] == 3
     assert missing["source"].endswith("app.py")
 
+def test_online_flag_registered(tmp_path: Path, capsys, monkeypatch):
+    (tmp_path / "requirements.txt").write_text("requests==2.0.0\n")
+    (tmp_path / "app.py").write_text("import requests\n")
+
+    # Stub the network call
+    import depcheck.cli as cli
+    monkeypatch.setattr(cli, "latest_pypi", lambda name: "2.31.0")
+
+    rc = cli.main([str(tmp_path), "--online", "--json"])
+    out = capsys.readouterr().out
+    assert rc == 1
+    data = json.loads(out)
+    assert any(item["check"] == "outdated" for item in data)
 
 def test_missing_path(capsys):
     rc = main(["/nonexistent/path/xyz"])
