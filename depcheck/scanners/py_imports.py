@@ -13,6 +13,9 @@ SKIP_DIRS = {
     ".tox", ".eggs",
 }
 
+# Special forms that aren't real modules
+SKIP_MODULES = {"__future__"}
+
 
 def _normalize(name: str) -> str:
     return name.split(".", 1)[0].replace("_", "-").lower()
@@ -20,9 +23,9 @@ def _normalize(name: str) -> str:
 
 @dataclass(frozen=True)
 class Import:
-    module: str          # normalized top-level name
-    source: str          # file it came from
-    line: int            # line number
+    module: str
+    source: str
+    line: int
 
 
 class PyImportsScanner:
@@ -40,12 +43,19 @@ class PyImportsScanner:
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     for alias in node.names:
+                        top = alias.name.split(".", 1)[0]
+                        if top in SKIP_MODULES:
+                            continue
                         imports.append(
                             Import(_normalize(alias.name), str(path), node.lineno)
                         )
                 elif isinstance(node, ast.ImportFrom):
-                    if node.module and node.level == 0:
-                        imports.append(
-                            Import(_normalize(node.module), str(path), node.lineno)
-                        )
+                    if node.level != 0 or not node.module:
+                        continue
+                    top = node.module.split(".", 1)[0]
+                    if top in SKIP_MODULES:
+                        continue
+                    imports.append(
+                        Import(_normalize(node.module), str(path), node.lineno)
+                    )
         return imports

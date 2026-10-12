@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 from ..models import Finding, Project
 from .base import Check
@@ -26,11 +27,30 @@ IMPORT_TO_PACKAGE = {
 IGNORE_MISSING = {"tests", "test"}
 
 
+def _local_packages(root: Path) -> set[str]:
+    """Top-level package and module names that live inside the project.
+
+    A directory with __init__.py, or a bare .py file at the root.
+    These are the project's own code, not external dependencies.
+    """
+    names: set[str] = set()
+    if not root.is_dir():
+        return names
+    for entry in root.iterdir():
+        name = entry.name
+        if entry.is_dir() and (entry / "__init__.py").exists():
+            names.add(name.replace("_", "-").lower())
+        elif entry.is_file() and entry.suffix == ".py":
+            names.add(entry.stem.replace("_", "-").lower())
+    return names
+
+
 class MissingCheck(Check):
     name = "missing"
 
     def run(self, project: Project) -> list[Finding]:
         declared = {d.name for d in project.dependencies}
+        local = _local_packages(Path(project.root))
         findings: list[Finding] = []
         reported: set[tuple[str, str]] = set()
 
@@ -38,10 +58,11 @@ class MissingCheck(Check):
             mod = imp.module
             if mod in STDLIB or mod in IGNORE_MISSING or mod.startswith("_"):
                 continue
+            if mod in local:
+                continue
             pkg = IMPORT_TO_PACKAGE.get(mod, mod)
             if pkg in declared or mod in declared:
                 continue
-            # dedupe: one finding per (module, file)
             key = (mod, imp.source)
             if key in reported:
                 continue
