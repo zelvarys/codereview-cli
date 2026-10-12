@@ -1,8 +1,9 @@
-"""Scan JS/TS files for imports (regex-based, good enough for v1)."""
+"""Scan JS/TS files for imports (with location)."""
 
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 SKIP_DIRS = {
@@ -36,11 +37,18 @@ def _normalize(spec: str) -> str | None:
     return spec.split("/", 1)[0].lower()
 
 
+@dataclass(frozen=True)
+class Import:
+    module: str
+    source: str
+    line: int
+
+
 class JsImportsScanner:
     language = "javascript"
 
-    def scan(self, root: Path) -> set[str]:
-        imported: set[str] = set()
+    def scan(self, root: Path) -> list[Import]:
+        imports: list[Import] = []
         for path in root.rglob("*"):
             if not path.is_file() or path.suffix not in EXTENSIONS:
                 continue
@@ -55,6 +63,8 @@ class JsImportsScanner:
                 if not spec:
                     continue
                 norm = _normalize(spec)
-                if norm:
-                    imported.add(norm)
-        return imported
+                if not norm:
+                    continue
+                line = text.count("\n", 0, m.start()) + 1
+                imports.append(Import(norm, str(path), line))
+        return imports

@@ -28,8 +28,6 @@ SKIP_DIRS = {
     ".tox", ".eggs",
 }
 
-DEP_FILENAMES = {"requirements.txt", "pyproject.toml", "package.json"}
-
 ALL_CHECKS: list[Check] = [
     UnpinnedCheck(),
     UnusedCheck(),
@@ -61,13 +59,11 @@ def _parse_deps(root: Path) -> list:
     return deps
 
 
-def _scan_imports(root: Path) -> tuple[set[str], set[str]]:
-    py = PyImportsScanner().scan(root)
-    js = JsImportsScanner().scan(root)
-    return py, js
+def _scan_imports(root: Path) -> tuple[list, list]:
+    return PyImportsScanner().scan(root), JsImportsScanner().scan(root)
 
 
-def run(path: str, as_json: bool, color: bool) -> int:
+def run(path: str, as_json: bool) -> int:
     root = Path(path).resolve()
     if not root.exists():
         print(f"error: path not found: {path}", file=sys.stderr)
@@ -76,10 +72,12 @@ def run(path: str, as_json: bool, color: bool) -> int:
     files_scanned = sum(1 for _ in _iter_candidate_files(root))
     deps = _parse_deps(root)
     py_imports, js_imports = _scan_imports(root)
+    all_imports = py_imports + js_imports
 
     languages: set[str] = set()
-    if py_imports or any(d.source.endswith(".txt") or d.source.endswith(".toml")
-                         for d in deps):
+    if py_imports or any(
+        d.source.endswith((".txt", ".toml")) for d in deps
+    ):
         languages.add("python")
     if js_imports or any(d.source.endswith("package.json") for d in deps):
         languages.add("javascript")
@@ -87,7 +85,7 @@ def run(path: str, as_json: bool, color: bool) -> int:
     project = Project(
         root=str(root),
         dependencies=deps,
-        imported=py_imports | js_imports,
+        imports=all_imports,
         languages=languages,
     )
 
@@ -99,6 +97,7 @@ def run(path: str, as_json: bool, color: bool) -> int:
             except Exception as e:  # noqa: BLE001
                 print(f"warning: check {check.name} failed: {e}", file=sys.stderr)
 
+    color = sys.stdout.isatty()
     if as_json:
         print(json_report(findings))
     else:
@@ -109,13 +108,12 @@ def run(path: str, as_json: bool, color: bool) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="depcheck", description="Audit dependencies.")
-    p.add_argument("--version", action="version", version=f"depcheck {__version__}")
+    p.add_argument("-v", "--version", action="version", version=f"depcheck {__version__}")
     p.add_argument("path", nargs="?", default=".", help="Project directory")
     p.add_argument("--json", action="store_true", help="JSON output")
-    p.add_argument("--no-color", action="store_true")
     args = p.parse_args(argv)
 
-    return run(args.path, as_json=args.json, color=not args.no_color)
+    return run(args.path, as_json=args.json)
 
 
 if __name__ == "__main__":

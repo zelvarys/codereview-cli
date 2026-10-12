@@ -7,51 +7,52 @@ import sys
 from ..models import Finding, Project
 from .base import Check
 
-# top-level stdlib module names
 STDLIB = set(getattr(sys, "stdlib_module_names", set()))
 
-# common import names that map to different package names
 IMPORT_TO_PACKAGE = {
-  "pil": "pillow",
-  "cv2": "opencv-python",
-  "sklearn": "scikit-learn",
-  "yaml": "pyyaml",
-  "bs4": "beautifulsoup4",
-  "dotenv": "python-dotenv",
-  "jwt": "pyjwt",
-  "dateutil": "python-dateutil",
-  "serial": "pyserial",
-  "git": "gitpython",
-  "attr": "attrs",
+    "pil": "pillow",
+    "cv2": "opencv-python",
+    "sklearn": "scikit-learn",
+    "yaml": "pyyaml",
+    "bs4": "beautifulsoup4",
+    "dotenv": "python-dotenv",
+    "jwt": "pyjwt",
+    "dateutil": "python-dateutil",
+    "serial": "pyserial",
+    "git": "gitpython",
+    "attr": "attrs",
 }
 
-# project-local modules to ignore
 IGNORE_MISSING = {"tests", "test"}
 
 
 class MissingCheck(Check):
-  name = "missing"
+    name = "missing"
 
-  def run(self, project: Project) -> list[Finding]:
-    declared = {d.name for d in project.dependencies}
-    findings: list[Finding] = []
+    def run(self, project: Project) -> list[Finding]:
+        declared = {d.name for d in project.dependencies}
+        findings: list[Finding] = []
+        reported: set[tuple[str, str]] = set()
 
-    for mod in sorted(project.imported):
-      if mod in STDLIB:
-        continue
-      if mod in IGNORE_MISSING:
-        continue
-      if mod.startswith("_"):
-        continue
-      # try mapping
-      pkg = IMPORT_TO_PACKAGE.get(mod, mod)
-      if pkg in declared or mod in declared:
-        continue
-      findings.append(
-        Finding(
-          check=self.name,
-          severity="error",
-          message=f"`{mod}` is imported but not declared as a dependency",
-        )
-      )
-    return findings
+        for imp in project.imports:
+            mod = imp.module
+            if mod in STDLIB or mod in IGNORE_MISSING or mod.startswith("_"):
+                continue
+            pkg = IMPORT_TO_PACKAGE.get(mod, mod)
+            if pkg in declared or mod in declared:
+                continue
+            # dedupe: one finding per (module, file)
+            key = (mod, imp.source)
+            if key in reported:
+                continue
+            reported.add(key)
+            findings.append(
+                Finding(
+                    check=self.name,
+                    severity="error",
+                    message=f"`{mod}` is imported but not declared",
+                    source=imp.source,
+                    line=imp.line,
+                )
+            )
+        return findings

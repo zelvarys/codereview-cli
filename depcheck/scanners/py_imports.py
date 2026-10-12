@@ -1,8 +1,9 @@
-"""Scan Python files for imports (top-level names only)."""
+"""Scan Python files for imports (with location)."""
 
 from __future__ import annotations
 
 import ast
+from dataclasses import dataclass
 from pathlib import Path
 
 SKIP_DIRS = {
@@ -17,11 +18,18 @@ def _normalize(name: str) -> str:
     return name.split(".", 1)[0].replace("_", "-").lower()
 
 
+@dataclass(frozen=True)
+class Import:
+    module: str          # normalized top-level name
+    source: str          # file it came from
+    line: int            # line number
+
+
 class PyImportsScanner:
     language = "python"
 
-    def scan(self, root: Path) -> set[str]:
-        imported: set[str] = set()
+    def scan(self, root: Path) -> list[Import]:
+        imports: list[Import] = []
         for path in root.rglob("*.py"):
             if any(part in SKIP_DIRS for part in path.parts):
                 continue
@@ -32,8 +40,12 @@ class PyImportsScanner:
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     for alias in node.names:
-                        imported.add(_normalize(alias.name))
+                        imports.append(
+                            Import(_normalize(alias.name), str(path), node.lineno)
+                        )
                 elif isinstance(node, ast.ImportFrom):
                     if node.module and node.level == 0:
-                        imported.add(_normalize(node.module))
-        return imported
+                        imports.append(
+                            Import(_normalize(node.module), str(path), node.lineno)
+                        )
+        return imports

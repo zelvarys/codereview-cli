@@ -7,32 +7,37 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class Dependency:
-  """A single declared dependency."""
+    name: str
+    raw: str
+    constraint: str
+    source: str
+    line: int
+    kind: str = "runtime"
 
-  name: str          # normalized lowercase name
-  raw: str           # original string as written
-  constraint: str        # e.g. "==1.2.3", ">=1.0,<2.0", "" if unpinned
-  source: str          # filename it came from
-  line: int          # line number in that file
-  kind: str = "runtime"    # "runtime" | "dev"
+
+@dataclass(frozen=True)
+class Import:
+    module: str
+    source: str
+    line: int
 
 
 @dataclass
 class Project:
-  """A scanned project."""
+    root: str
+    dependencies: list[Dependency] = field(default_factory=list)
+    imports: list[Import] = field(default_factory=list)
+    languages: set[str] = field(default_factory=set)
 
-  root: str
-  dependencies: list[Dependency] = field(default_factory=list)
-  imported: set[str] = field(default_factory=set)   # normalized module names
-  languages: set[str] = field(default_factory=set)   # "python" | "javascript"
+    @property
+    def imported_modules(self) -> set[str]:
+        return {i.module for i in self.imports}
 
 
 @dataclass(frozen=True)
 class Finding:
-  """A problem found by a check."""
-
-  check: str
-  severity: str        # "error" | "warning" | "info"
-  message: str
-  source: str = ""
-  line: int = 0
+    check: str
+    severity: str
+    message: str
+    source: str = ""
+    line: int = 0
