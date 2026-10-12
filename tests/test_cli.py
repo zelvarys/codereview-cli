@@ -38,7 +38,7 @@ def test_online_flag_registered(tmp_path: Path, capsys, monkeypatch):
 
     # Stub the network call
     import depcheck.cli as cli
-    monkeypatch.setattr(cli, "latest_pypi", lambda name: "2.31.0")
+    monkeypatch.setattr(cli, "latest_pypi", lambda name: "3.0.0")
 
     rc = cli.main([str(tmp_path), "--online", "--json"])
     out = capsys.readouterr().out

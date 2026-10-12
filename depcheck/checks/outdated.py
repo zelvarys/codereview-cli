@@ -1,4 +1,4 @@
-"""Flag dependencies that are behind the latest release."""
+"""Flag dependencies that are a major version behind the latest release."""
 
 from __future__ import annotations
 
@@ -11,32 +11,26 @@ from .base import Check
 def _extract_pinned(constraint: str) -> str | None:
     """Return the version this constraint pins to, if any.
 
-    Handles: ==1.2.3, ===1.2.3, 1.2.3 (bare), >=1.0 (returns None — not a pin)
+    Handles: ==1.2.3, ===1.2.3, 1.2.3 (bare), ^1.2.3, ~1.2.3 (npm).
+    Returns None for ranges like >=1.0 or empty.
     """
     c = constraint.strip()
     if not c:
         return None
-    m = re.match(r"^===?\s*([0-9][^\s,;]*)", c)
+    m = re.match(r"^===?\s*v?([0-9][^\s,;]*)", c)
     if m:
         return m.group(1)
-    # bare version like "1.2.3" or "^1.2.3" (npm)
     m = re.match(r"^[\^~]?\s*v?([0-9][^\s,;]*)", c)
     if m:
         return m.group(1)
     return None
 
 
-def _version_tuple(v: str) -> tuple[int, ...] | None:
-    """Parse '1.2.3' or '1.2.3rc1' into a comparable tuple. Best-effort."""
+def _major(v: str) -> int | None:
+    """Return the major version number, or None if unparseable."""
     v = v.strip().lstrip("v")
-    parts = re.split(r"[.\-+]", v)
-    out = []
-    for p in parts:
-        m = re.match(r"^(\d+)", p)
-        if not m:
-            break
-        out.append(int(m.group(1)))
-    return tuple(out) if out else None
+    m = re.match(r"^(\d+)", v)
+    return int(m.group(1)) if m else None
 
 
 class OutdatedCheck(Check):
@@ -55,20 +49,24 @@ class OutdatedCheck(Check):
             latest = self.latest_lookup(dep)
             if not latest:
                 continue
-            cur = _version_tuple(pinned)
-            new = _version_tuple(latest)
-            if not cur or not new:
+            cur_major = _major(pinned)
+            new_major = _major(latest)
+            if cur_major is None or new_major is None:
                 continue
-            if new > cur:
-                findings.append(
-                    Finding(
-                        check=self.name,
-                        severity="info",
-                        message=(
-                            f"`{dep.name}` is {pinned}, latest is {latest}"
-                        ),
-                        source=dep.source,
-                        line=dep.line,
-                    )
+            if new_major <= cur_major:
+                continue
+            behind = new_major - cur_major
+            label = "1 major" if behind == 1 else f"{behind} majors"
+            findings.append(
+                Finding(
+                    check=self.name,
+                    severity="warning",
+                    message=(
+                        f"`{dep.name}` is on {cur_major}.x "
+                        f"(latest is {new_major}.x, {label} behind)"
+                    ),
+                    source=dep.source,
+                    line=dep.line,
                 )
+            )
         return findings
